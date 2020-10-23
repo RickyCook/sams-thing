@@ -1,4 +1,4 @@
-import { Button, Divider, Layout, PageHeader, Slider, Typography } from 'antd';
+import { Button, Descriptions, Divider, Layout, PageHeader, Slider, Typography } from 'antd';
 import * as c from '@ant-design/colors';
 import { PlusOutlined } from '@ant-design/icons';
 import { useMutation, useLazyQuery, gql } from '@apollo/client';
@@ -46,6 +46,7 @@ const MetricChart = props => {
             entry => ({
               primary: new Date(entry.created_at),
               secondary: entry[dataKey] || 0.0000001,
+              rawData: entry,
             })
           )
           : [],
@@ -56,7 +57,7 @@ const MetricChart = props => {
   if (!rawData) return null;
   return (
     <div style={{ height: '200px' }}>
-      <Chart { ...chartProps } data={ data } tooltip />
+      <Chart { ...chartProps } data={ data } />
     </div>
   );
 }
@@ -64,6 +65,21 @@ const MetricChart = props => {
 const ChartWrapper = styled.div`
   margin-bottom: 50px;
 `;
+
+const DescriptionsWhite = styled(Descriptions)`
+  width: 400px;
+  & .ant-descriptions-title,
+  & .ant-descriptions-item-label,
+  & .ant-descriptions-item-content {
+    color: white;
+  }
+`;
+
+const cc = {
+  happy: c.green[5],
+  social: c.blue[5],
+  energy: c.orange[5],
+}
 
 const AllCharts = props => {
   const { rangeFrom, rangeTo } = props;
@@ -93,33 +109,47 @@ const AllCharts = props => {
     },
     { type: 'linear', position: 'left', hardMin: 0, hardMax: 100 },
   ]), [rangeFrom, rangeTo]);
+  const tooltip = useMemo(() => ({
+    render: ({ datum }) => {
+      if (!datum) return null;
+      const raw = datum.originalDatum.rawData;
+      return (
+        <DescriptionsWhite title={ moment(raw.created_at).format('ddd Do MMM [at] hh:mma') } size="small">
+          <Descriptions.Item label={ <span style={{ color: cc.happy }}>Happiness</span> }>{ raw.happy }</Descriptions.Item>
+          <Descriptions.Item label={ <span style={{ color: cc.social }}>Sociality</span> }>{ raw.social }</Descriptions.Item>
+          <Descriptions.Item label={ <span style={{ color: cc.energy }}>Energy</span> }>{ raw.energy }</Descriptions.Item>
+          { raw.notes && <Descriptions.Item label="Notes" span={ 3 }><pre>{ raw.notes }</pre></Descriptions.Item> }
+        </DescriptionsWhite>
+      );
+    }
+  }));
   return (
     <>
       <ChartWrapper>
         <Divider>Happiness</Divider>
         <MetricChart
-          { ...{ series, axes, onFocus, primaryCursor }}
+          { ...{ series, axes, tooltip, onFocus, primaryCursor }}
           data={ props.data }
           dataKey="happy"
-          color={ c.green[5] }
+          color={ cc.happy }
         />
       </ChartWrapper>
       <ChartWrapper>
         <Divider>Sociality</Divider>
         <MetricChart
-          { ...{ series, axes, onFocus, primaryCursor }}
+          { ...{ series, axes, tooltip, onFocus, primaryCursor }}
           data={ props.data }
           dataKey="social"
-          color={ c.blue[5] }
+          color={ cc.social }
         />
       </ChartWrapper>
       <ChartWrapper>
         <Divider>Energy</Divider>
         <MetricChart
-          { ...{ series, axes, onFocus, primaryCursor }}
+          { ...{ series, axes, tooltip, onFocus, primaryCursor }}
           data={ props.data }
           dataKey="energy"
-          color={ c.orange[5] }
+          color={ cc.energy }
         />
       </ChartWrapper>
     </>
