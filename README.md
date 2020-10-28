@@ -3,7 +3,7 @@ Basic logging of mood over time
 ## Running
 ```
 docker build -t sams-thing:latest .
-docker run -dt -P -n sams-thing sams-thing:latest
+docker run -dt -P --name sams-thing sams-thing:latest
 docker port sams-thing
 ```
 
